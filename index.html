@@ -98,7 +98,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #1D9E75
 </div>
 
 <script>
-const GEMINI_KEY = "AQ.Ab8RN6LTI4zuE-5_TN4nfOCtk5xGriskOxHqppdAzBYmzD-gmQ";
+const OR_KEY = "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";
 
 const KB = `
 PRODUCT
@@ -130,7 +130,7 @@ INSTALLATION
 - Most feature walls completed in 2-4 hours. No drying or curing time needed.
 - DIY-friendly — no professional installer required.
 - Panels are semi-permanent. Removal possible but may require wall repair.
-- Renter-friendly with removable fixing methods (screws/nails). No structural changes needed.
+- Renter-friendly with removable fixing methods. No structural changes needed.
 - Use cases: living room TV walls, bedroom headboards, kitchen backsplashes, home offices, cafes, shops, hotels.
 
 MAINTENANCE
@@ -192,15 +192,22 @@ ${question}
 Write only the answer. No preamble.`;
 
   try {
-    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=" + GEMINI_KEY;
-    const res = await fetch(url, {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + OR_KEY,
+        'HTTP-Referer': 'https://snapmasons.github.io/CS-Mode',
+        'X-Title': 'SnapMasons CS Tool'
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-lite-001',
+        messages: [{ role: 'user', content: prompt }]
+      })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
-    const answer = data.candidates[0].content.parts[0].text.trim();
+    const answer = data.choices[0].message.content.trim();
     box.className = 'answer-box';
     box.textContent = answer;
   } catch(e) {
