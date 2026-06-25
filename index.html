@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapMasons CS Tool</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; min-height: 100vh; padding: 2rem 1rem; }
+.app { max-width: 680px; margin: 0 auto; }
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; }
+.logo { width: 40px; height: 40px; background: #0F6E56; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.header h1 { font-size: 17px; font-weight: 600; color: #1a1a18; }
+.header p { font-size: 13px; color: #888780; margin-top: 2px; }
+.card { background: #fff; border: 1px solid #e8e6e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.section-title { font-size: 13px; font-weight: 500; color: #888780; margin-bottom: 12px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+label { font-size: 12px; color: #888780; display: block; margin-bottom: 5px; }
+input, select, textarea { width: 100%; font-family: inherit; font-size: 14px; color: #1a1a18; background: #f8f7f4; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; transition: border-color 0.15s; }
+input, select { height: 38px; }
+textarea { min-height: 90px; resize: vertical; padding-top: 10px; line-height: 1.5; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: #1D9E75; background: #fff; }
+.divider { border: none; border-top: 1px solid #f0ede8; margin: 14px 0; }
+.btn-row { display: flex; justify-content: flex-end; margin-top: 12px; }
+.btn-primary { background: #0F6E56; color: #fff; border: none; border-radius: 8px; padding: 0 20px; height: 40px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s; }
+.btn-primary:hover { background: #1D9E75; }
+.btn-primary:disabled { background: #b4b2a9; cursor: not-allowed; }
+.btn-secondary { background: transparent; color: #5f5e5a; border: 1px solid #ddd; border-radius: 8px; padding: 0 16px; height: 38px; font-size: 13px; cursor: pointer; }
+.btn-secondary:hover { background: #f5f5f3; }
+.answer-box { background: #f8f7f4; border: 1px solid #e8e6e0; border-radius: 8px; padding: 14px; font-size: 14px; color: #1a1a18; line-height: 1.7; min-height: 80px; white-space: pre-wrap; }
+.answer-box.loading { color: #888780; font-style: italic; }
+.answer-box.error { color: #a32d2d; border-color: #f09595; background: #fcebeb; }
+.actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 99px; background: #E1F5EE; color: #085041; font-weight: 500; }
+.answer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.copy-confirm { font-size: 12px; color: #0F6E56; display: none; align-items: center; gap: 4px; }
+.footer-note { font-size: 12px; color: #b4b2a9; margin-top: 10px; line-height: 1.5; }
+#resultCard { display: none; }
+#setupCard { }
+.key-saved { font-size: 12px; color: #0F6E56; margin-top: 6px; display: none; }
+.key-row { display: flex; gap: 8px; align-items: flex-end; }
+.key-row input { flex: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
+    <div>
+      <h1>SnapMasons CS Tool</h1>
+      <p>AI-powered draft answer generator for customer service</p>
+    </div>
+  </div>
+
+  <div class="card" id="setupCard">
+    <div class="section-title">API Key setup (one time only)</div>
+    <label for="apiKeyInput">Anthropic API Key</label>
+    <div class="key-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+      <button class="btn-primary" onclick="saveKey()">Save</button>
+    </div>
+    <div class="key-saved" id="keySaved">&#10003; Key saved — you won't need to enter this again on this device.</div>
+    <p style="font-size:12px; color:#b4b2a9; margin-top:8px;">Your key is stored only in your browser. It is never sent anywhere except directly to Anthropic.</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Agent info</div>
+    <div class="row">
+      <div>
+        <label for="agent">Your name</label>
+        <input type="text" id="agent" placeholder="Agent name" />
+      </div>
+      <div>
+        <label for="channel">Channel</label>
+        <select id="channel">
+          <option>Email</option>
+          <option>WhatsApp</option>
+          <option>Live chat</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="section-title">Customer question</div>
+    <textarea id="question" placeholder="Paste or type the customer's question here..."></textarea>
+    <div class="btn-row">
+      <button class="btn-primary" id="generateBtn" onclick="generateAnswer()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        Generate draft answer
+      </button>
+    </div>
+  </div>
+
+  <div class="card" id="resultCard">
+    <div class="answer-header">
+      <div class="section-title" style="margin:0">Draft answer</div>
+      <span class="badge">&#10003; Ready to review</span>
+    </div>
+    <div class="answer-box" id="answerBox"></div>
+    <div class="actions">
+      <button class="btn-primary" onclick="copyAnswer()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        Copy answer
+      </button>
+      <button class="btn-secondary" onclick="generateAnswer()">Regenerate</button>
+      <span class="copy-confirm" id="copyConfirm">&#10003; Copied!</span>
+    </div>
+    <p class="footer-note">Review before sending. If this doesn't fully answer the question, edit manually or escalate to service@snapmasons.com</p>
+  </div>
+</div>
+
+<script>
+const KB = `
+PRODUCT
+- Panels are faux stone and faux brick — replicate real masonry with deep 3D texture, not printed.
+- Made of high-density EPS (expanded polystyrene) with a hardened mineral surface coating.
+- Ultra-light, impact-resistant, moisture-resistant, scratch-resistant. Will not warp, rot, or fade.
+- Available styles: brick, stone, slate, wood, marble.
+- Standard size: 19.7" x 39.4" (50 x 100 cm). Each panel covers 0.5 m² (5.38 sq ft).
+- Panel thickness: 22mm. Weight: approx 1.5-1.75 kg per panel (~85% lighter than real stone/brick).
+- 10 panels per standard box, covering 5 m².
+- Single panels available as samples.
+- Class B fire-rated: flame-retardant and self-extinguishing. Safe for residential and commercial use.
+- Paintable with any standard water-based interior wall paint (roller, brush, or spray gun).
+- Waterproof and moisture-resistant. Suitable for bathrooms. Mould and mildew resistant.
+- UV-resistant and weatherproof — suitable for outdoor use (water-based varnish recommended outdoors).
+- Suitable around contained fireplaces (electric/ethanol). Not for direct open flame.
+- Low-VOC, safe for homes with children and pets.
+- Provides thermal insulation and sound reduction.
+- Flexible, dimensionally stable — will not crack or warp.
+- Coverage calculator available on every product page at snapmasons.com.
+- Order 1-2 extra panels to allow for cuts and future repairs.
+
+INSTALLATION
+- Fix permanently with high-quality solvent-free construction adhesive. Or use screws/nails for removable install (renters).
+- No mortar, no grout needed. Small joins can be filled with acrylic caulk if desired.
+- Compatible surfaces: plasterboard, brick, concrete, tiles, wood, existing panelling — almost any surface.
+- Cut panels with a utility knife or hand saw to fit around sockets and edges.
+- Tools needed: utility knife, adhesive gun, tape measure, level. No specialist tools.
+- Most feature walls completed in 2-4 hours. No drying or curing time needed.
+- DIY-friendly — no professional installer required.
+- Panels are semi-permanent. Removal possible but may require wall repair depending on adhesive used.
+- Renter-friendly with removable fixing methods (screws/nails). No structural changes needed.
+- Use cases: living room TV walls, bedroom headboards, kitchen backsplashes, home offices, cafes, shops, hotels.
+
+MAINTENANCE
+- Clean with damp cloth and mild soap. Avoid abrasives.
+- For high-traffic areas: apply water-based varnish for extra durability.
+- Damaged panel repair: cut out damaged section, scrape old adhesive, cut replacement, apply fresh adhesive, press in. Paint touch-up hides the seam.
+
+SHIPPING AND ORDERS
+- Ships from US depots. Free shipping to US and EU.
+- Delivery: 3-7 business days standard ground shipping.
+- Customs and import taxes fully covered for US, UK, EU, Canada. Price at checkout is final.
+- Other countries: contact SnapMasons to confirm customs situation.
+- Wholesale available for 10+ pack orders. Contact for custom quote.
+- Custom sizes: standard 50x100cm only. Contact for personalization requests.
+- Order cancellation: possible if not yet shipped. Contact via website or WhatsApp.
+
+RETURNS
+- 30-day hassle-free return policy. Unused, undamaged items in original packaging.
+- Email service@snapmasons.com to initiate return.
+
+CONTACT
+- Email: service@snapmasons.com
+- WhatsApp: +90 850 532 33 08
+- Website: snapmasons.com/pages/contact
+- 24/7 customer support available.
+
+WHY SNAPMASONS
+- ~85% lighter than real stone/brick. No structural reinforcement needed.
+- 60-80% faster installation than traditional masonry.
+- No contractor needed — full DIY. Room done in a day.
+- Fully removable — renter friendly.
+- Color-stable, impact-resistant, long-lasting.
+- Free shipping US and EU. Import taxes covered for US/UK/EU/CA.
+`;
+
+window.onload = function() {
+  const saved = localStorage.getItem('sm_api_key');
+  if (saved) {
+    document.getElementById('apiKeyInput').value = saved;
+    document.getElementById('setupCard').style.borderColor = '#9FE1CB';
+    document.getElementById('keySaved').style.display = 'block';
+  }
+};
+
+function saveKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { alert('Please enter your API key.'); return; }
+  localStorage.setItem('sm_api_key', key);
+  document.getElementById('keySaved').style.display = 'block';
+  document.getElementById('setupCard').style.borderColor = '#9FE1CB';
+}
+
+async function generateAnswer() {
+  const question = document.getElementById('question').value.trim();
+  if (!question) { alert('Please enter a customer question first.'); return; }
+
+  const apiKey = localStorage.getItem('sm_api_key') || document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) { alert('Please enter and save your API key first.'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = 'Generating...';
+
+  document.getElementById('resultCard').style.display = 'block';
+  const box = document.getElementById('answerBox');
+  box.className = 'answer-box loading';
+  box.textContent = 'Generating draft answer...';
+
+  const prompt = `You are a professional customer service agent for SnapMasons, a company that sells high-quality 3D decorative faux stone and faux brick EPS wall panels.
+
+Use ONLY the information in the knowledge base below to answer the customer question. Do not mention any other brand names. Write a clear, friendly, professional response in English. Keep it concise (2-5 sentences). If the question cannot be answered from the knowledge base, say: "I'd be happy to help with this — please email us at service@snapmasons.com or reach us on WhatsApp at +90 850 532 33 08 for a detailed answer."
+
+=== KNOWLEDGE BASE ===
+${KB}
+
+=== CUSTOMER QUESTION ===
+${question}
+
+Write only the answer. No preamble.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const answer = data.content[0].text.trim();
+    box.className = 'answer-box';
+    box.textContent = answer;
+  } catch(e) {
+    box.className = 'answer-box error';
+    box.textContent = 'Error: ' + e.message;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Generate draft answer';
+}
+
+function copyAnswer() {
+  const text = document.getElementById('answerBox').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const c = document.getElementById('copyConfirm');
+    c.style.display = 'inline-flex';
+    setTimeout(() => c.style.display = 'none', 2000);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('question').addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') generateAnswer();
+  });
+});
+</script>
+</body>
+</html>
